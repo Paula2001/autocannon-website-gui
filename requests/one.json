@@ -1,0 +1,28 @@
+[
+   {
+    "request_name": "test",
+    "method" : "GET",
+    "path": "/login",
+    "body": {
+      "username": "user_name",
+      "password": "*********"
+    },
+    "header": {
+      "Authorization": "Bearer Token"
+    },
+    "duration" : "10s"
+  },
+  {
+    "request_name": "test 2",
+    "method" : "GET",
+    "path": "/logout",
+    "body": {
+      "username": "user_name",
+      "password": "*********"
+    },
+    "header": {
+      "Authorization": "Bearer Token"
+    },
+    "duration" : "10s"
+  }
+]

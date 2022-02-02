@@ -1,0 +1,9 @@
+{
+  "requests_collection_path" : "./../requests/one.json",
+  "autocannon_config" : {
+    "url": "http://localhost:5000",
+    "connections": 10,
+    "pipelining": 1,
+    "duration": 20
+  }
+}
