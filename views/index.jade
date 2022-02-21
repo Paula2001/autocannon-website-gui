@@ -57,24 +57,29 @@ html
       script(src='//cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js')
       script.
         $(document).ready(function () {
+          let datatable = false; 
           $('#file_btn').click(()=> {
             var file = document.getElementById("file").files[0];
             if (file) {
               var reader = new FileReader();
               reader.readAsText(file, "UTF-8");
               reader.onload = function (evt) {
-              const data = evt.target.result;
-              $('.loading').css("display","block");
-              $('#resultTable').DataTable({
-                  "ajax": {
-                    "url": "/data",
-                    "data": JSON.parse(data),
-                    "type": "POST",
-                    "complete":()=>{
-                      $('.loading').css("display","none")
-                    }
-                  },
-                });
+                const data = evt.target.result;
+                $('.loading').css("display","block");
+                  if(!datatable){
+                    datatable = $('#resultTable').DataTable({
+                      "ajax": {
+                        "url": "/data",
+                        "data": JSON.parse(data),
+                        "type": "POST",
+                        "complete":()=>{
+                          $('.loading').css("display","none")
+                        }
+                      },
+                    });
+                  }else{
+                    datatable.ajax.reload();
+                  }
               }
               reader.onerror = function (evt) {
                 console.log("error")

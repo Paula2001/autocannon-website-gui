@@ -17,16 +17,30 @@ const prepareVariables = (request) => {
     return data ;
 }
 
+const setOptions = (request, header, folder) => {
+    return {
+        ...config.autocannon_config,    
+        "url": "http://paula-george.guru:3001",
+        requests: [
+            {
+                method: request.method,
+                path: '/'+request.url.path.join('/'),
+                body: request.body?.raw,
+                header: JSON.stringify(header),
+                name: folder.name
+            },
+        ]
+    };
+}
+
 const build = async (request, variables) => {
     const data = [];
     for (const folder of request.item) {
-        console.log('this is folder',folder);
         if(folder.item){
             for (let request of folder.item) {
                 request = request.request;
                 let header = {};
-                const hostUrl = `${request.url.protocol}${request.url.host.join('.')}`;
-                console.log(hostUrl);
+                const hostUrl = `${request.url.protocol}://${request.url.host.join('.')}`;
                 if(request.header){
                     for (const headers of request.header) {
                         header[headers['key']] = headers['value'];
@@ -37,24 +51,10 @@ const build = async (request, variables) => {
                         }
                     }    
                 }
-                console.log(request.url);
-                const options = {
-                    ...config.autocannon_config,    
-                    "url": "http://paula-george.guru:3001",
-                    requests: [
-                        {
-                            method: request.method,
-                            path: '/'+request.url.path.join('/'),
-                            body: request.body?.raw,
-                            header: JSON.stringify(header),
-                            name: folder.name
-                        },
-                    ]
-                };
-                console.log(options);
+                const options = setOptions(request,header,folder);
                 const result = await autocannon(options);
-                result.title = 'the request name';
-                result.url = hostUrl;
+                result.title = request.name;
+                result.url = hostUrl+options.path;
                 const statusCodes = `1xx: ${result['1xx']}, 2xx: ${result['2xx']} ,3xx: ${result['3xx']} ,4xx: ${result['4xx']} ,5xx: ${result['5xx']}`;
                 data.push([
                     folder.name,
@@ -77,7 +77,6 @@ router.post('/data',upload.none() ,async function(req, res, next) {
     const requests = [];
     const variables = prepareVariables(request);
     const data = await build(request,variables);
-    // return res.json({'asd': request.item});
   return res.json({data: data});
 });
 
