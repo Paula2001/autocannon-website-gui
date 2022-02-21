@@ -1,52 +1,85 @@
 var express = require('express');
 var router = express.Router();
 const autocannon = require("autocannon");
-
+const multer = require('multer');
+const upload = multer();
 const config = require("./../config.json");
 const request_collection = require(config.requests_collection_path);
 /* GET home page. */
-const build = async () => {
-  const data = [];
 
-  for (let i = 0; i < request_collection.length; i++) {
-    const options = {
-      ...config.autocannon_config,
-      requests: [
-        {
-          method: request_collection[i].method,
-          path: request_collection[i].path,
-          body: JSON.stringify(request_collection[i].body),
-          header: JSON.stringify(request_collection[i].header)
-        },
-      ]
-    };
+const prepareVariables = (request) => {
+    let data = {};
+    if(request.variable){
+        for (const variable of request?.variable) {
+            data[`{{${variable.key}}}`] = variable.value;
+        }
+    }
+    return data ;
+}
 
-    const result = await autocannon(options);
-    result.title = request_collection[i].request_name;
-    result.url = `${result.url}${request_collection[i].path}`
-    const statusCodes = `1xx: ${result['1xx']}, 2xx: ${result['2xx']} ,3xx: ${result['3xx']} ,4xx: ${result['4xx']} ,5xx: ${result['5xx']}`;
-    data.push([
-        result.title,
-        result.url,
-        statusCodes,
-        result.errors,
-        result.start,
-        result.finish
-    ]);
-  }
-
-  return data;
-
+const build = async (request, variables) => {
+    const data = [];
+    for (const folder of request.item) {
+        console.log('this is folder',folder);
+        if(folder.item){
+            for (let request of folder.item) {
+                request = request.request;
+                let header = {};
+                const hostUrl = `${request.url.protocol}${request.url.host.join('.')}`;
+                console.log(hostUrl);
+                if(request.header){
+                    for (const headers of request.header) {
+                        header[headers['key']] = headers['value'];
+                        const auth = request.auth;
+                        if (auth){
+                            const tokenValue = variables[auth[auth.type][0].value];
+                            header['authorization'] = (auth.type === 'bearer')? `${auth.type} ${tokenValue}`: tokenValue;
+                        }
+                    }    
+                }
+                console.log(request.url);
+                const options = {
+                    ...config.autocannon_config,    
+                    "url": "http://paula-george.guru:3001",
+                    requests: [
+                        {
+                            method: request.method,
+                            path: '/'+request.url.path.join('/'),
+                            body: request.body?.raw,
+                            header: JSON.stringify(header),
+                            name: folder.name
+                        },
+                    ]
+                };
+                console.log(options);
+                const result = await autocannon(options);
+                result.title = 'the request name';
+                result.url = hostUrl;
+                const statusCodes = `1xx: ${result['1xx']}, 2xx: ${result['2xx']} ,3xx: ${result['3xx']} ,4xx: ${result['4xx']} ,5xx: ${result['5xx']}`;
+                data.push([
+                    folder.name,
+                    result.title,
+                    result.url,
+                    statusCodes,
+                    result.errors,
+                    result.start,
+                    result.finish
+                ]);
+            }
+        }
+    }
+    return data;
 }
 
 
-router.get('/data', async function(req, res, next) {
-  console.log();
-  const data = await build();
-
-  return res.json({data: data})
+router.post('/data',upload.none() ,async function(req, res, next) {
+    let request = req.body;
+    const requests = [];
+    const variables = prepareVariables(request);
+    const data = await build(request,variables);
+    // return res.json({'asd': request.item});
+  return res.json({data: data});
 });
-
 
 router.get('/', async function(req, res, next) {
   res.render('index');

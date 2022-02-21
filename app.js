@@ -9,15 +9,14 @@ var usersRouter = require('./routes/users');
 
 var app = express();
 var timeout = require('connect-timeout'); //express v4
-
 app.use(timeout(999999999));
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb' ,extended: true ,parameterLimit: 1000000}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
