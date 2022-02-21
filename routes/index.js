@@ -17,7 +17,7 @@ const prepareVariables = (request) => {
     return data ;
 }
 
-const setOptions = (request, header, folder) => {
+const setOptions = (request, header) => {
     return {
         ...config.autocannon_config,    
         "url": "http://paula-george.guru:3001",
@@ -27,7 +27,6 @@ const setOptions = (request, header, folder) => {
                 path: '/'+request.url.path.join('/'),
                 body: request.body?.raw,
                 header: JSON.stringify(header),
-                name: folder.name
             },
         ]
     };
@@ -53,7 +52,7 @@ const build = async (request, variables) => {
                 }
                 const options = setOptions(request,header,folder);
                 const result = await autocannon(options);
-                result.title = request.name;
+                result.title = folder.item.name;
                 result.url = hostUrl+options.requests[0].path;
                 const statusCodes = `1xx: ${result['1xx']}, 2xx: ${result['2xx']} ,3xx: ${result['3xx']} ,4xx: ${result['4xx']} ,5xx: ${result['5xx']}`;
                 data.push([
